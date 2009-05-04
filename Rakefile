@@ -21,3 +21,13 @@ Rake::TestTask.new do |t|
   t.test_files = FileList['test/**/*_test.rb']
   t.verbose = true
 end
+
+desc 'Publish gem to RubyForge'
+task :release => [ :package ] do
+  group_id     = $spec.rubyforge_project
+  package_id   = $spec.name
+  release_name = $spec.version
+  userfile     = File.expand_path("pkg/#{$spec.name}-#{$spec.version}.gem")
+
+  sh "rubyforge add_release #{group_id} #{package_id} #{release_name} #{userfile}"
+end
