@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name     = 'rack-openid'
-  s.version  = '0.0.1'
+  s.version  = '0.1'
   s.date     = '2009-05-04'
   s.summary  = 'Provides a more HTTPish API around the ruby-openid library'
   s.description = s.summary
