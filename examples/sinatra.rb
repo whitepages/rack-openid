@@ -4,8 +4,7 @@ require 'sinatra'
 # Session needs to be before Rack::OpenID
 use Rack::Session::Cookie
 
-# gem 'rack-openid'
-$: << File.dirname(__FILE__) + "/../lib"
+gem 'rack-openid'
 require 'rack/openid'
 
 use Rack::OpenID
