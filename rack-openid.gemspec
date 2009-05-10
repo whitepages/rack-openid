@@ -3,7 +3,7 @@ Gem::Specification.new do |s|
   s.version  = '0.1'
   s.date     = '2009-05-04'
   s.summary  = 'Provides a more HTTPish API around the ruby-openid library'
-  s.description = s.summary
+  s.description = 'Rack::OpenID provides a more HTTPish API around the ruby-openid library.'
   s.email    = 'josh@joshpeek.com'
   s.homepage = 'http://github.com/josh/rack-openid'
   s.rubyforge_project = 'rack-openid'
