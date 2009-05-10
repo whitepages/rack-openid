@@ -13,4 +13,5 @@ Gem::Specification.new do |s|
   s.extra_rdoc_files = %w[README.rdoc MIT-LICENSE]
   s.require_paths = %w[lib]
   s.add_dependency 'rack', '>= 0.4'
+  s.add_dependency 'ruby-openid', '>=2.1.6'
 end

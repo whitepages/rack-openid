@@ -1,6 +1,13 @@
+require 'rubygems'
+gem 'rack', '>= 0.4'
+gem 'ruby-openid', '>=2.1.6'
+
 require 'test/unit'
-require 'rack/openid'
 require 'mocha'
+
+require 'rack/mock'
+require 'rack/session/pool'
+require 'rack/openid'
 
 class HeaderTest < Test::Unit::TestCase
   def test_build_header
