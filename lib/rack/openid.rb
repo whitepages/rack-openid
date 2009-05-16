@@ -1,9 +1,10 @@
 require 'rack/request'
 require 'rack/utils'
+
 require 'openid'
 require 'openid/consumer'
 require 'openid/extensions/sreg'
-require 'openid/store/memory'
+require 'openid/extensions/ax'
 
 module Rack
   class OpenID
@@ -51,7 +52,7 @@ module Rack
 
     def initialize(app, store = nil)
       @app = app
-      @store = store || ::OpenID::Store::Memory.new
+      @store = store || default_store
       freeze
     end
 
@@ -182,6 +183,11 @@ module Rack
         end
 
         oidreq.add_extension(sregreq)
+      end
+
+      def default_store
+        require 'openid/store/memory'
+        ::OpenID::Store::Memory.new
       end
 
       def timeout_protection_from_identity_server
