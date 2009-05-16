@@ -7,7 +7,10 @@ use Rack::Session::Cookie
 gem 'rack-openid'
 require 'rack/openid'
 
-use Rack::OpenID
+gem 'josh-memcache_openid_store'
+require 'openid/store/memcache'
+
+use Rack::OpenID, OpenID::Store::Memcache.new
 
 get '/login' do
   erb :login
