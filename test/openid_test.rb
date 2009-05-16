@@ -122,6 +122,22 @@ class BeginAuthenticationTest < Test::Unit::TestCase
     assert_equal OpenIDProvider, response.headers["Location"]
   end
 
+  def test_with_attribute_exchange
+    stub_consumer! :request => lambda { |request|
+      request.expects(:redirect_url).returns(OpenIDProvider)
+    }, :axreq => lambda { |ax|
+      ax.expects(:add).times(3)
+    }
+
+    app = app(:identifier => 'loudthinking.com',
+      :required => ['http://axschema.org/namePerson/friendly', 'http://axschema.org/contact/email'],
+      :optional => 'http://axschema.org/namePerson')
+    response = process(app, '/', :method => :get)
+
+    assert_equal 303, response.status
+    assert_equal OpenIDProvider, response.headers['Location']
+  end
+
   def test_with_missing_id
     stub_consumer! :failure => true
 
@@ -173,14 +189,17 @@ class BeginAuthenticationTest < Test::Unit::TestCase
         consumer.expects(:begin).raises(OpenID::OpenIDError)
       else
         request = mock()
-        if options[:sregreq]
-          sregreq = mock()
-          options[:sregreq].call(sregreq)
-          OpenID::SReg::Request.expects(:new).returns(sregreq)
-          request.expects(:add_extension).with(sregreq)
-        else
-          request.expects(:add_extension)
-        end
+
+        sregreq = OpenID::SReg::Request.new
+        options[:sregreq].call(sregreq) if options[:sregreq]
+        OpenID::SReg::Request.expects(:new).returns(sregreq)
+        request.expects(:add_extension).with(sregreq)
+
+        axreq = OpenID::AX::FetchRequest.new
+        options[:axreq].call(axreq) if options[:axreq]
+        OpenID::AX::FetchRequest.expects(:new).returns(axreq)
+        request.expects(:add_extension).with(axreq)
+
         options[:request].call(request) if options[:request]
         consumer.expects(:begin).returns(request)
       end

@@ -86,6 +86,7 @@ module Rack
         begin
           oidreq = consumer.begin(identifier)
           add_simple_registration_fields(oidreq, params)
+          add_attribute_exchange_fields(oidreq, params)
           url = open_id_redirect_url(req, oidreq, params["trust_root"], params["return_to"], params["method"])
           return redirect_to(url)
         rescue ::OpenID::OpenIDError, Timeout::Error => e
@@ -167,22 +168,34 @@ module Rack
         oidreq.redirect_url(trust_root || realm_url(req), return_to || request_url(req))
       end
 
+      URL_FIELD_SELECTOR = lambda { |field| field.to_s =~ %r{^https?://} }
+
       def add_simple_registration_fields(oidreq, fields)
         sregreq = ::OpenID::SReg::Request.new
 
-        if required = fields["required"]
-          sregreq.request_fields(Array(required), true)
-        end
+        required = Array(fields['required']).reject(&URL_FIELD_SELECTOR)
+        sregreq.request_fields(required, true) if required.any?
 
-        if optional = fields["optional"]
-          sregreq.request_fields(Array(optional), false)
-        end
+        optional = Array(fields['optional']).reject(&URL_FIELD_SELECTOR)
+        sregreq.request_fields(optional, false) if optional.any?
 
-        if policy_url = fields["policy_url"]
+        if policy_url = fields['policy_url']
           sregreq.policy_url = policy_url
         end
 
         oidreq.add_extension(sregreq)
+      end
+
+      def add_attribute_exchange_fields(oidreq, fields)
+        axreq = ::OpenID::AX::FetchRequest.new
+
+        required = Array(fields['required']).select(&URL_FIELD_SELECTOR)
+        required.each { |field| axreq.add(::OpenID::AX::AttrInfo.new(field, nil, true)) }
+
+        optional = Array(fields['optional']).select(&URL_FIELD_SELECTOR)
+        optional.each { |field| axreq.add(::OpenID::AX::AttrInfo.new(field, nil, false)) }
+
+        oidreq.add_extension(axreq)
       end
 
       def default_store
