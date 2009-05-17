@@ -25,7 +25,8 @@ module Rack
       if str =~ /^OpenID/
         str = str.gsub(/^OpenID /, '')
         str.split(', ').each { |e|
-          k, v = e.split('=')
+          k, *v = e.split('=')
+          v = v.join('=')
           v.gsub!(/^\"/, '').gsub!(/\"$/, "")
           v = v.split(',')
           params[k] = v.length > 1 ? v : v.first

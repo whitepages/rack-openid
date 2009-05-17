@@ -14,4 +14,5 @@ Gem::Specification.new do |s|
   s.require_paths = %w[lib]
   s.add_dependency 'rack', '>= 0.4'
   s.add_dependency 'ruby-openid', '>=2.1.6'
+  s.add_development_dependency 'roman-rots', '>= 0.2.1'
 end
