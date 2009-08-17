@@ -1,4 +1,3 @@
-require 'rubygems'
 require 'sinatra'
 
 # Session needs to be before Rack::OpenID

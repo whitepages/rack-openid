@@ -1,7 +1,3 @@
-require 'rubygems'
-gem 'rack', '>= 0.4'
-gem 'ruby-openid', '>=2.1.6'
-
 require 'test/unit'
 require 'mocha'
 require 'net/http'

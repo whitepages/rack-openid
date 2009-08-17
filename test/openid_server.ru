@@ -1,4 +1,3 @@
-gem 'roman-rots', '>= 0.2.1'
 require 'rots'
 
 config = {
