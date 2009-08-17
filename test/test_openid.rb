@@ -6,7 +6,7 @@ require 'rack/mock'
 require 'rack/session/pool'
 require 'rack/openid'
 
-class HeaderTest < Test::Unit::TestCase
+class TestHeader < Test::Unit::TestCase
   def test_build_header
     assert_equal 'OpenID identity="http://example.com/"',
       Rack::OpenID.build_header(:identity => "http://example.com/")
@@ -30,7 +30,7 @@ class HeaderTest < Test::Unit::TestCase
   end
 end
 
-class OpenIDTest < Test::Unit::TestCase
+class TestOpenID < Test::Unit::TestCase
   RotsServer = 'http://localhost:9292'
   PidFile = File.expand_path('tmp/rack.pid')
 
