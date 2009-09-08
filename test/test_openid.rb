@@ -32,14 +32,13 @@ end
 
 class TestOpenID < Test::Unit::TestCase
   RotsServer = 'http://localhost:9292'
-  PidFile = File.expand_path('tmp/rack.pid')
 
   def setup
-    unless File.exist?(PidFile)
-      system("rackup -D -P #{PidFile} test/openid_server.ru")
-      sleep 0.5
-    end
-    @pid = File.read(PidFile)
+    @pid = fork {
+      exec "rackup -E none test/openid_server.ru"
+    }
+
+    sleep 0.5
 
     assert_nothing_raised(Errno::ECONNREFUSED) {
       uri = URI.parse(RotsServer)
@@ -48,8 +47,8 @@ class TestOpenID < Test::Unit::TestCase
   end
 
   def teardown
-    system("kill #{@pid}")
-    sleep 0.1
+    Process.kill 9, @pid
+    Process.wait(@pid)
   end
 
   def test_with_get
