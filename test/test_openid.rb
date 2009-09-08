@@ -6,6 +6,10 @@ require 'rack/mock'
 require 'rack/session/pool'
 require 'rack/openid'
 
+log = Logger.new(STDOUT)
+log.level = Logger::WARN
+OpenID::Util.logger = log
+
 class TestHeader < Test::Unit::TestCase
   def test_build_header
     assert_equal 'OpenID identity="http://example.com/"',
@@ -33,22 +37,36 @@ end
 class TestOpenID < Test::Unit::TestCase
   RotsServer = 'http://localhost:9292'
 
-  def setup
-    @pid = fork {
-      exec "rackup -E none test/openid_server.ru"
+  @server_started = false
+
+  def self.start_server!
+    return if @server_started
+
+    pid = fork {
+      STDIN.reopen "/dev/null"
+      STDOUT.reopen "/dev/null", "a"
+      STDERR.reopen "/dev/null", "a"
+
+      exec "rackup test/openid_server.ru"
     }
 
-    sleep 0.5
+    at_exit {
+      Process.kill 9, pid
+      Process.wait(pid)
+    }
+
+    sleep 0.75
+
+    @server_started = true
+  end
+
+  def setup
+    self.class.start_server!
 
     assert_nothing_raised(Errno::ECONNREFUSED) {
       uri = URI.parse(RotsServer)
       response = Net::HTTP.get_response(uri)
     }
-  end
-
-  def teardown
-    Process.kill 9, @pid
-    Process.wait(@pid)
   end
 
   def test_with_get
