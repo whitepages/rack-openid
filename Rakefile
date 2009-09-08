@@ -1,4 +1,3 @@
-require 'rake/testtask'
 require 'rake/packagetask'
 require 'rake/gempackagetask'
 
@@ -12,9 +11,6 @@ Rake::GemPackageTask.new($spec) do |package|
   package.gem_spec = $spec
 end
 
-task :default => :test
-Rake::TestTask.new
-
 desc 'Publish gem to RubyForge'
 task :release => [ :package ] do
   group_id     = $spec.rubyforge_project
@@ -23,4 +19,12 @@ task :release => [ :package ] do
   userfile     = File.expand_path("pkg/#{$spec.name}-#{$spec.version}.gem")
 
   sh "rubyforge add_release #{group_id} #{package_id} #{release_name} #{userfile}"
+end
+
+require 'rake/testtask'
+
+task :default => :test
+
+Rake::TestTask.new do |t|
+  t.warning = true
 end
