@@ -55,18 +55,19 @@ class TestOpenID < Test::Unit::TestCase
       Process.wait(pid)
     }
 
-    sleep 0.75
+    begin
+      uri = URI.parse(RotsServer)
+      response = Net::HTTP.get_response(uri)
+    rescue Errno::ECONNREFUSED
+      sleep 0.5
+      retry
+    end
 
     @server_started = true
   end
 
   def setup
     self.class.start_server!
-
-    assert_nothing_raised(Errno::ECONNREFUSED) {
-      uri = URI.parse(RotsServer)
-      response = Net::HTTP.get_response(uri)
-    }
   end
 
   def test_with_get
