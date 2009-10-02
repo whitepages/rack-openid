@@ -10,7 +10,7 @@ Gem::Specification.new do |s|
   s.has_rdoc = true
   s.authors  = ["Joshua Peek"]
   s.files    = ["lib/rack/openid.rb"]
-  s.extra_rdoc_files = %w[README.rdoc MIT-LICENSE]
+  s.extra_rdoc_files = %w[README.rdoc LICENSE]
   s.require_paths = %w[lib]
   s.add_dependency 'rack', '>= 0.4'
   s.add_dependency 'ruby-openid', '>=2.1.6'
