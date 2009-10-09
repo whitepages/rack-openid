@@ -6,7 +6,8 @@ Provides a more HTTPish API around the ruby-openid library.
 
 You trigger an OpenID request similar to HTTP authentication. From your app, return a "401 Unauthorized" and a "WWW-Authenticate" header with the identifier you would like to validate.
 
-On competition, the OpenID response is automatically verified and assigned to +env["rack.openid.response"]+.
+On competition, the OpenID response is automatically verified and assigned to
+<tt>env["rack.openid.response"]</tt>.
 
   MyApp = lambda { |env|
     if resp = env["rack.openid.response"]
