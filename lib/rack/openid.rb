@@ -82,7 +82,7 @@ module Rack
         end
 
         consumer = ::OpenID::Consumer.new(session, @store)
-        identifier = params["identifier"]
+        identifier = params['identifier'] || params['identity']
 
         begin
           oidreq = consumer.begin(identifier)

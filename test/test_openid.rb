@@ -80,6 +80,16 @@ class TestOpenID < Test::Unit::TestCase
     assert_equal 'success', @response.body
   end
 
+  def test_with_deprecated_identity
+    @app = app
+    process('/', :method => 'GET', :identity => "#{RotsServer}/john.doe?openid.success=true")
+    follow_redirect!
+    assert_equal 200, @response.status
+    assert_equal 'GET', @response.headers['X-Method']
+    assert_equal '/', @response.headers['X-Path']
+    assert_equal 'success', @response.body
+  end
+
   def test_with_post_method
     @app = app
     process('/', :method => 'POST')
