@@ -17,7 +17,7 @@ On competition, the OpenID response is automatically verified and assigned to
       when :failure
         ...
     else
-      [401, {"WWW-Authenticate" => 'OpenID identity="http://example.com/"'}, []]
+      [401, {"WWW-Authenticate" => 'OpenID identifier="http://example.com/"'}, []]
     end
   }
 
