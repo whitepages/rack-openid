@@ -135,10 +135,9 @@ module Rack
         env["QUERY_STRING"] = env["rack.request.query_string"] =
           Rack::Utils.build_query(env["rack.request.query_hash"])
 
+        qs = env["QUERY_STRING"]
         request_uri = env["PATH_INFO"]
-        unless env["QUERY_STRING"] == ""
-          request_uri << "?" + env["QUERY_STRING"]
-        end
+        request_uri << "?" + qs unless qs == ""
         env["REQUEST_URI"] = request_uri
       end
 
