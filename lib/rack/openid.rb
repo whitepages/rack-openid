@@ -147,9 +147,10 @@ module Rack
         url = req.scheme + "://"
         url << req.host
 
-        if req.scheme == "https" && req.port != 443 ||
-            req.scheme == "http" && req.port != 80
-          url << ":#{req.port}"
+        scheme, port = req.scheme, req.port
+        if scheme == "https" && port != 443 ||
+            scheme == "http" && port != 80
+          url << ":#{port}"
         end
 
         url
