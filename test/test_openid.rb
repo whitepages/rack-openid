@@ -16,10 +16,16 @@ class TestHeader < Test::Unit::TestCase
       Rack::OpenID.build_header(:identity => "http://example.com/")
     assert_equal 'OpenID identity="http://example.com/?foo=bar"',
       Rack::OpenID.build_header(:identity => "http://example.com/?foo=bar")
-    assert_equal 'OpenID identity="http://example.com/", return_to="http://example.org/"',
-      Rack::OpenID.build_header(:identity => "http://example.com/", :return_to => "http://example.org/")
-    assert_equal 'OpenID identity="http://example.com/", required="nickname,email"',
-      Rack::OpenID.build_header(:identity => "http://example.com/", :required => ["nickname", "email"])
+
+    header = Rack::OpenID.build_header(:identity => "http://example.com/", :return_to => "http://example.org/")
+    assert_match(/OpenID /, header)
+    assert_match(/identity="http:\/\/example\.com\/"/, header)
+    assert_match(/return_to="http:\/\/example\.org\/"/, header)
+
+    header = Rack::OpenID.build_header(:identity => "http://example.com/", :required => ["nickname", "email"])
+    assert_match(/OpenID /, header)
+    assert_match(/identity="http:\/\/example\.com\/"/, header)
+    assert_match(/required="nickname,email"/, header)
   end
 
   def test_parse_header
