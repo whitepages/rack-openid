@@ -63,8 +63,9 @@ module Rack
 
       status, headers, body = @app.call(env)
 
-      if status.to_i == 401 && headers[AUTHENTICATE_HEADER]
-        begin_authentication(env, headers[AUTHENTICATE_HEADER])
+      qs = headers[AUTHENTICATE_HEADER]
+      if status.to_i == 401 && qs
+        begin_authentication(env, qs)
       else
         [status, headers, body]
       end
