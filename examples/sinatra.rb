@@ -3,13 +3,8 @@ require 'sinatra'
 # Session needs to be before Rack::OpenID
 use Rack::Session::Cookie
 
-gem 'rack-openid'
 require 'rack/openid'
-
-gem 'josh-memcache_openid_store'
-require 'openid/store/memcache'
-
-use Rack::OpenID, OpenID::Store::Memcache.new
+use Rack::OpenID
 
 get '/login' do
   erb :login
