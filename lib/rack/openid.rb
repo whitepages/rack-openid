@@ -113,13 +113,20 @@ module Rack
         env[RESPONSE] = oidresp
 
         method = req.GET["_method"]
-        if method
-          method = method.upcase
-          if HTTP_METHODS.include?(method)
-            env["REQUEST_METHOD"] = method
-          end
-        end
+        override_request_method(env, method)
 
+        sanitize_query_string(env)
+      end
+
+      def override_request_method(env, method)
+        return unless method
+        method = method.upcase
+        if HTTP_METHODS.include?(method)
+          env["REQUEST_METHOD"] = method
+        end
+      end
+
+      def sanitize_query_string(env)
         query_hash = env["rack.request.query_hash"]
         query_hash.delete("_method")
         query_hash.delete_if do |key, value|
