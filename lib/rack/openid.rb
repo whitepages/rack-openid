@@ -167,16 +167,18 @@ module Rack
       end
 
       def open_id_redirect_url(req, oidreq, trust_root = nil, return_to = nil, method = nil)
+        request_url = request_url(req)
+
         if return_to
           method ||= "get"
         else
-          return_to = request_url(req)
+          return_to = request_url
           method ||= req.request_method
         end
 
         method = method.to_s.downcase
         oidreq.return_to_args['_method'] = method unless method == "get"
-        oidreq.redirect_url(trust_root || realm_url(req), return_to || request_url(req))
+        oidreq.redirect_url(trust_root || realm_url(req), return_to || request_url)
       end
 
       URL_FIELD_SELECTOR = lambda { |field| field.to_s =~ %r{^https?://} }
