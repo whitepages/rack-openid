@@ -65,8 +65,8 @@ module Rack
 
       status, headers, body = @app.call(env)
 
-      if status.to_i == 401 && (qs = headers[AUTHENTICATE_HEADER])
-        begin_authentication(env, qs)
+      if status.to_i == 401 && headers[AUTHENTICATE_HEADER]
+        begin_authentication(env, headers[AUTHENTICATE_HEADER])
       else
         [status, headers, body]
       end
@@ -76,8 +76,9 @@ module Rack
       def begin_authentication(env, qs)
         req = Rack::Request.new(env)
         params = self.class.parse_header(qs)
+        session = env["rack.session"]
 
-        unless session = env["rack.session"]
+        unless session
           raise RuntimeError, "Rack::OpenID requires a session"
         end
 
@@ -98,8 +99,9 @@ module Rack
 
       def complete_authentication(env)
         req = Rack::Request.new(env)
+        session = env["rack.session"]
 
-        unless session = env["rack.session"]
+        unless session
           raise RuntimeError, "Rack::OpenID requires a session"
         end
 
@@ -110,7 +112,8 @@ module Rack
 
         env[RESPONSE] = oidresp
 
-        if method = req.GET["_method"]
+        method = req.GET["_method"]
+        if method
           method = method.upcase
           if HTTP_METHODS.include?(method)
             env["REQUEST_METHOD"] = method
@@ -180,9 +183,8 @@ module Rack
         optional = Array(fields['optional']).reject(&URL_FIELD_SELECTOR)
         sregreq.request_fields(optional, false) if optional.any?
 
-        if policy_url = fields['policy_url']
-          sregreq.policy_url = policy_url
-        end
+        policy_url = fields['policy_url']
+        sregreq.policy_url = policy_url if policy_url
 
         oidreq.add_extension(sregreq)
       end
