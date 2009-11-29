@@ -9,27 +9,25 @@ require 'openid/extensions/ax'
 module Rack
   class OpenID
     def self.build_header(params = {})
-      value = 'OpenID '
-      value += params.map { |k, v|
-        if v.is_a?(Array)
-          "#{k}=\"#{v.join(',')}\""
+      'OpenID ' + params.map { |key, value|
+        if value.is_a?(Array)
+          "#{key}=\"#{value.join(',')}\""
         else
-          "#{k}=\"#{v}\""
+          "#{key}=\"#{value}\""
         end
       }.join(', ')
-      value
     end
 
     def self.parse_header(str)
       params = {}
       if str =~ /^OpenID/
         str = str.gsub(/^OpenID /, '')
-        str.split(', ').each { |e|
-          k, *v = e.split('=')
-          v = v.join('=')
-          v.gsub!(/^\"/, '').gsub!(/\"$/, "")
-          v = v.split(',')
-          params[k] = v.length > 1 ? v : v.first
+        str.split(', ').each { |pair|
+          key, *value = pair.split('=')
+          value = value.join('=')
+          value.gsub!(/^\"/, '').gsub!(/\"$/, "")
+          value = value.split(',')
+          params[key] = value.length > 1 ? value : value.first
         }
       end
       params
