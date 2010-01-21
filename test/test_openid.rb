@@ -177,13 +177,26 @@ class TestOpenID < Test::Unit::TestCase
     assert_equal 'missing', @response.body
   end
 
+  def test_sanitize_query_string
+    @app = app
+    process('/', :method => 'GET')
+    follow_redirect!
+    assert_equal 200, @response.status
+    assert_equal '/', @response.headers['X-Path']
+    assert_equal '', @response.headers['X-Query-String']
+  end
+
   private
     def app(options = {})
       options[:identifier] ||= "#{RotsServer}/john.doe?openid.success=true"
 
       app = lambda { |env|
         if resp = env[Rack::OpenID::RESPONSE]
-          headers = {'X-Path' => env['PATH_INFO'], 'X-Method' => env['REQUEST_METHOD']}
+          headers = {
+            'X-Path' => env['PATH_INFO'],
+            'X-Method' => env['REQUEST_METHOD'],
+            'X-Query-String' => env['QUERY_STRING']
+          }
           if resp.status == :success
             [200, headers, [resp.status.to_s]]
           else

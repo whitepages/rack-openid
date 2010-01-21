@@ -136,7 +136,7 @@ module Rack
           Rack::Utils.build_query(env["rack.request.query_hash"])
 
         qs = env["QUERY_STRING"]
-        request_uri = env["PATH_INFO"]
+        request_uri = env["PATH_INFO"].dup
         request_uri << "?" + qs unless qs == ""
         env["REQUEST_URI"] = request_uri
       end
