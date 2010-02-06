@@ -1,7 +1,7 @@
 Gem::Specification.new do |s|
   s.name     = 'rack-openid'
-  s.version  = '0.2.2'
-  s.date     = '2010-01-21'
+  s.version  = '0.2.3'
+  s.date     = '2010-02-06'
   s.summary  = 'Provides a more HTTPish API around the ruby-openid library'
   s.description = <<-EOS
     Rack::OpenID provides a more HTTPish API around the ruby-openid library.
