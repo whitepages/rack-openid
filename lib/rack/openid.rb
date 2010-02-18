@@ -6,8 +6,21 @@ require 'openid/consumer'
 require 'openid/extensions/sreg'
 require 'openid/extensions/ax'
 
-module Rack
+module Rack #:nodoc:
+  # A Rack middleware that provides a more HTTPish API around the
+  # ruby-openid library.
+  #
+  # You trigger an OpenID request similar to HTTP authentication.
+  # From your app, return a "401 Unauthorized" and a "WWW-Authenticate"
+  # header with the identifier you would like to validate.
+  #
+  # On competition, the OpenID response is automatically verified and
+  # assigned to <tt>env["rack.openid.response"]</tt>.
   class OpenID
+    # Helper method for building the "WWW-Authenticate" header value.
+    #
+    #   Rack::OpenID.build_header(:identifier => "http://josh.openid.com/")
+    #     #=> OpenID identifier="http://josh.openid.com/"
     def self.build_header(params = {})
       'OpenID ' + params.map { |key, value|
         if value.is_a?(Array)
@@ -18,6 +31,11 @@ module Rack
       }.join(', ')
     end
 
+    # Helper method for parsing "WWW-Authenticate" header values into
+    # a hash.
+    #
+    #   Rack::OpenID.parse_header("OpenID identifier='http://josh.openid.com/'")
+    #     #=> {:identifier => "http://josh.openid.com/"}
     def self.parse_header(str)
       params = {}
       if str =~ AUTHENTICATE_REGEXP
@@ -33,15 +51,17 @@ module Rack
       params
     end
 
-    class TimeoutResponse
+    class TimeoutResponse #:nodoc:
       include ::OpenID::Consumer::Response
       STATUS = :failure
     end
 
-    class MissingResponse
+    class MissingResponse #:nodoc:
       include ::OpenID::Consumer::Response
       STATUS = :missing
     end
+
+    # :stopdoc:
 
     HTTP_METHODS = %w(GET HEAD PUT POST DELETE OPTIONS)
 
@@ -49,13 +69,26 @@ module Rack
     AUTHENTICATE_HEADER = "WWW-Authenticate".freeze
     AUTHENTICATE_REGEXP = /^OpenID/.freeze
 
+    URL_FIELD_SELECTOR = lambda { |field| field.to_s =~ %r{^https?://} }
 
+    # :startdoc:
+
+    # Initialize middleware with application and optional OpenID::Store.
+    # If no store is given, OpenID::Store::Memory is used.
+    #
+    #   use Rack::OpenID
+    #
+    # or
+    #
+    #   use Rack::OpenID, OpenID::Store::Memcache.new
     def initialize(app, store = nil)
       @app = app
       @store = store || default_store
       freeze
     end
 
+    # Standard Rack +call+ dispatch that accepts an +env+ and
+    # returns a <tt>[status, header, body]</tt> response.
     def call(env)
       req = Rack::Request.new(env)
       if env["REQUEST_METHOD"] == "GET" && req.GET["openid.mode"]
@@ -180,8 +213,6 @@ module Rack
         oidreq.return_to_args['_method'] = method unless method == "get"
         oidreq.redirect_url(trust_root || realm_url(req), return_to || request_url)
       end
-
-      URL_FIELD_SELECTOR = lambda { |field| field.to_s =~ %r{^https?://} }
 
       def add_simple_registration_fields(oidreq, fields)
         sregreq = ::OpenID::SReg::Request.new
