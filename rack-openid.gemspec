@@ -14,7 +14,6 @@ Gem::Specification.new do |s|
 
   s.files = ['lib/rack/openid.rb']
 
-  s.has_rdoc = true
   s.extra_rdoc_files = %w[README.rdoc LICENSE]
 
   s.author   = 'Joshua Peek'
