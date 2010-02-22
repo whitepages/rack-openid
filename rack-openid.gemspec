@@ -9,7 +9,6 @@ Gem::Specification.new do |s|
 
   s.add_dependency 'rack', '>= 0.4'
   s.add_dependency 'ruby-openid', '>=2.1.6'
-  s.add_development_dependency 'mocha', '>= 0.9.7'
   s.add_development_dependency 'roman-rots', '>= 0.2.1'
 
   s.files = ['lib/rack/openid.rb']

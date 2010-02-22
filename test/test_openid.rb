@@ -1,5 +1,4 @@
 require 'test/unit'
-require 'mocha'
 require 'net/http'
 
 require 'rack/mock'
