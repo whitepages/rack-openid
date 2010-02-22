@@ -1,4 +1,5 @@
 require 'rots'
+require 'tempfile'
 
 config = {
   'identity' => 'john.doe',
@@ -16,5 +17,5 @@ map("/%s" % config['identity']) do
 end
 
 map '/server' do
-  run Rots::ServerApp.new(config, :storage => File.join('.', 'tmp', 'rots'))
+  run Rots::ServerApp.new(config, :storage => Dir.tmpdir)
 end
