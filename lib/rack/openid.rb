@@ -91,7 +91,7 @@ module Rack #:nodoc:
     # returns a <tt>[status, header, body]</tt> response.
     def call(env)
       req = Rack::Request.new(env)
-      if env["REQUEST_METHOD"] == "GET" && req.GET["openid.mode"]
+      if req.params["openid.mode"]
         complete_authentication(env)
       end
 
