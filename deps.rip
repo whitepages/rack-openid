@@ -1,0 +1,2 @@
+rack >=0.4
+ruby-openid >=2.1.6
