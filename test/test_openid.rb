@@ -1,13 +1,39 @@
 require 'test/unit'
 require 'net/http'
 
-require 'rack/mock'
-require 'rack/session/pool'
+require 'rack'
 require 'rack/openid'
 
 log = Logger.new(STDOUT)
 log.level = Logger::WARN
 OpenID::Util.logger = log
+
+class MockFetcher
+  def initialize(app)
+    @app = app
+  end
+
+  def fetch(url, body = nil, headers = nil, limit = nil)
+    opts = (headers || {}).dup
+    opts[:input]  = body
+    opts[:method] = "POST" if body
+    env = Rack::MockRequest.env_for(url, opts)
+
+    status, headers, body = @app.call(env)
+
+    buf = []
+    buf << "HTTP/1.1 #{status} #{Rack::Utils::HTTP_STATUS_CODES[status]}"
+    headers.each { |header, value| buf << "#{header}: #{value}" }
+    buf << ""
+    body.each { |part| buf << part }
+
+    io = Net::BufferedIO.new(StringIO.new(buf.join("\n")))
+    res = Net::HTTPResponse.read_new(io)
+    res.reading_body(io, true) {}
+    OpenID::HTTPResponse._from_net_response(res, url)
+  end
+end
+
 
 class TestHeader < Test::Unit::TestCase
   def test_build_header
@@ -44,40 +70,32 @@ class TestHeader < Test::Unit::TestCase
 end
 
 class TestOpenID < Test::Unit::TestCase
-  RotsServer = 'http://localhost:9292'
+  RotsServerUrl = 'http://localhost:9292'
 
-  @server_started = false
+  RotsApp = Rack::Builder.new do
+    require 'rots'
 
-  def self.start_server!
-    return if @server_started
-
-    pid = fork {
-      STDIN.reopen "/dev/null"
-      STDOUT.reopen "/dev/null", "a"
-      STDERR.reopen "/dev/null", "a"
-
-      exec "rackup test/openid_server.ru"
+    config = {
+      'identity' => 'john.doe',
+      'sreg' => {
+        'nickname' => 'jdoe',
+        'fullname' => 'John Doe',
+        'email' => 'jhon@doe.com',
+        'dob' => Date.parse('1985-09-21'),
+        'gender' => 'M'
+      }
     }
 
-    at_exit {
-      Process.kill 9, pid
-      Process.wait(pid)
-    }
-
-    begin
-      uri = URI.parse(RotsServer)
-      response = Net::HTTP.get_response(uri)
-    rescue Errno::ECONNREFUSED
-      sleep 0.5
-      retry
+    map("/%s" % config['identity']) do
+      run Rots::IdentityPageApp.new(config, {})
     end
 
-    @server_started = true
+    map '/server' do
+      run Rots::ServerApp.new(config, :storage => Dir.tmpdir)
+    end
   end
 
-  def setup
-    self.class.start_server!
-  end
+  OpenID.fetcher = MockFetcher.new(RotsApp)
 
   def test_with_get
     @app = app
@@ -91,7 +109,7 @@ class TestOpenID < Test::Unit::TestCase
 
   def test_with_deprecated_identity
     @app = app
-    process('/', :method => 'GET', :identity => "#{RotsServer}/john.doe?openid.success=true")
+    process('/', :method => 'GET', :identity => "#{RotsServerUrl}/john.doe?openid.success=true")
     follow_redirect!
     assert_equal 200, @response.status
     assert_equal 'GET', @response.headers['X-Method']
@@ -162,7 +180,7 @@ class TestOpenID < Test::Unit::TestCase
   end
 
   def test_with_missing_id
-    @app = app(:identifier => "#{RotsServer}/john.doe")
+    @app = app(:identifier => "#{RotsServerUrl}/john.doe")
     process('/', :method => 'GET')
     follow_redirect!
     assert_equal 400, @response.status
@@ -172,7 +190,7 @@ class TestOpenID < Test::Unit::TestCase
   end
 
   def test_with_timeout
-    @app = app(:identifier => RotsServer)
+    @app = app(:identifier => RotsServerUrl)
     process('/', :method => "GET")
     assert_equal 400, @response.status
     assert_equal 'GET', @response.headers['X-Method']
@@ -197,7 +215,7 @@ class TestOpenID < Test::Unit::TestCase
 
   private
     def app(options = {})
-      options[:identifier] ||= "#{RotsServer}/john.doe?openid.success=true"
+      options[:identifier] ||= "#{RotsServerUrl}/john.doe?openid.success=true"
 
       app = lambda { |env|
         if resp = env[Rack::OpenID::RESPONSE]
@@ -228,9 +246,11 @@ class TestOpenID < Test::Unit::TestCase
     def follow_redirect!
       assert @response
       assert_equal 303, @response.status
-      location = URI.parse(@response.headers['Location'])
-      response = Net::HTTP.get_response(location)
-      uri = URI(response['Location'])
+
+      env = Rack::MockRequest.env_for(@response.headers['Location'])
+      status, headers, body = RotsApp.call(env)
+
+      uri = URI(headers['Location'])
       process("#{uri.path}?#{uri.query}")
     end
 end
