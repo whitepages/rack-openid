@@ -65,9 +65,9 @@ module Rack #:nodoc:
 
     HTTP_METHODS = %w(GET HEAD PUT POST DELETE OPTIONS)
 
-    RESPONSE = "rack.openid.response".freeze
-    AUTHENTICATE_HEADER = "WWW-Authenticate".freeze
-    AUTHENTICATE_REGEXP = /^OpenID/.freeze
+    RESPONSE = "rack.openid.response"
+    AUTHENTICATE_HEADER = "WWW-Authenticate"
+    AUTHENTICATE_REGEXP = /^OpenID/
 
     URL_FIELD_SELECTOR = lambda { |field| field.to_s =~ %r{^https?://} }
 
@@ -84,7 +84,6 @@ module Rack #:nodoc:
     def initialize(app, store = nil)
       @app = app
       @store = store || default_store
-      freeze
     end
 
     # Standard Rack +call+ dispatch that accepts an +env+ and
