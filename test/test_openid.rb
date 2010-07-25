@@ -3,6 +3,7 @@ require 'net/http'
 
 require 'rack'
 require 'rack/openid'
+require 'rack/openid/simple_auth'
 
 log = Logger.new(STDOUT)
 log.level = Logger::WARN
@@ -33,6 +34,33 @@ class MockFetcher
     OpenID::HTTPResponse._from_net_response(res, url)
   end
 end
+
+RotsServerUrl = 'http://localhost:9292'
+
+RotsApp = Rack::Builder.new do
+  require 'rots'
+
+  config = {
+    'identity' => 'john.doe',
+    'sreg' => {
+      'nickname' => 'jdoe',
+      'fullname' => 'John Doe',
+      'email' => 'jhon@doe.com',
+      'dob' => Date.parse('1985-09-21'),
+      'gender' => 'M'
+    }
+  }
+
+  map("/%s" % config['identity']) do
+    run Rots::IdentityPageApp.new(config, {})
+  end
+
+  map '/server' do
+    run Rots::ServerApp.new(config, :storage => Dir.tmpdir)
+  end
+end
+
+OpenID.fetcher = MockFetcher.new(RotsApp)
 
 
 class TestHeader < Test::Unit::TestCase
@@ -69,33 +97,27 @@ class TestHeader < Test::Unit::TestCase
   end
 end
 
+module RackTestHelpers
+  private
+    def process(*args)
+      env = Rack::MockRequest.env_for(*args)
+      @response = Rack::MockResponse.new(*@app.call(env))
+    end
+
+    def follow_redirect!
+      assert @response
+      assert_equal 303, @response.status
+
+      env = Rack::MockRequest.env_for(@response.headers['Location'])
+      status, headers, body = RotsApp.call(env)
+
+      uri = URI(headers['Location'])
+      process("#{uri.path}?#{uri.query}")
+    end
+end
+
 class TestOpenID < Test::Unit::TestCase
-  RotsServerUrl = 'http://localhost:9292'
-
-  RotsApp = Rack::Builder.new do
-    require 'rots'
-
-    config = {
-      'identity' => 'john.doe',
-      'sreg' => {
-        'nickname' => 'jdoe',
-        'fullname' => 'John Doe',
-        'email' => 'jhon@doe.com',
-        'dob' => Date.parse('1985-09-21'),
-        'gender' => 'M'
-      }
-    }
-
-    map("/%s" % config['identity']) do
-      run Rots::IdentityPageApp.new(config, {})
-    end
-
-    map '/server' do
-      run Rots::ServerApp.new(config, :storage => Dir.tmpdir)
-    end
-  end
-
-  OpenID.fetcher = MockFetcher.new(RotsApp)
+  include RackTestHelpers
 
   def test_with_get
     @app = app
@@ -237,20 +259,37 @@ class TestOpenID < Test::Unit::TestCase
       }
       Rack::Session::Pool.new(Rack::OpenID.new(app))
     end
+end
 
-    def process(*args)
-      env = Rack::MockRequest.env_for(*args)
-      @response = Rack::MockResponse.new(*@app.call(env))
-    end
+class TestSimpleAuth < Test::Unit::TestCase
+  include RackTestHelpers
 
-    def follow_redirect!
-      assert @response
-      assert_equal 303, @response.status
+  def test_successful_login
+    @app = app "#{RotsServerUrl}/john.doe?openid.success=true"
 
-      env = Rack::MockRequest.env_for(@response.headers['Location'])
-      status, headers, body = RotsApp.call(env)
+    process '/dashboard'
+    follow_redirect!
 
-      uri = URI(headers['Location'])
-      process("#{uri.path}?#{uri.query}")
+    assert_equal 200, @response.status
+    assert_equal 'Hello', @response.body
+
+    cookie = @response.headers['Set-Cookie'].split(';').first
+    process '/dashboard', 'HTTP_COOKIE' => cookie
+    assert_equal 200, @response.status
+  end
+
+  def test_failed_login
+    @app = app "#{RotsServerUrl}/john.doe"
+
+    process '/dashboard'
+    follow_redirect!
+    assert_match RotsServerUrl, @response.headers['Location']
+  end
+
+  private
+    def app(identifier)
+      app = lambda { |env| [200, {'Content-Type' => 'text/html'}, ['Hello']] }
+      app = Rack::OpenID::SimpleAuth.new(app, identifier)
+      Rack::Session::Pool.new(app)
     end
 end
