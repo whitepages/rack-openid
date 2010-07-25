@@ -270,12 +270,13 @@ class TestSimpleAuth < Test::Unit::TestCase
     process '/dashboard'
     follow_redirect!
 
-    assert_equal 200, @response.status
-    assert_equal 'Hello', @response.body
+    assert_equal 303, @response.status
+    assert_equal 'http://example.org/dashboard', @response.headers['Location']
 
     cookie = @response.headers['Set-Cookie'].split(';').first
     process '/dashboard', 'HTTP_COOKIE' => cookie
     assert_equal 200, @response.status
+    assert_equal 'Hello', @response.body
   end
 
   def test_failed_login

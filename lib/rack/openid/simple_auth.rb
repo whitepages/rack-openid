@@ -1,4 +1,5 @@
 require 'rack/openid'
+require 'rack/request'
 
 module Rack #:nodoc:
   class OpenID
@@ -26,7 +27,7 @@ module Rack #:nodoc:
           app.call(env)
         elsif successful_response?(env)
           authenticate_session(env)
-          app.call(env)
+          redirect_to requested_url(env)
         else
           authentication_request
         end
@@ -53,6 +54,15 @@ module Rack #:nodoc:
           if resp = env[OpenID::RESPONSE]
             resp.status == :success && resp.display_identifier == identifier
           end
+        end
+
+        def requested_url(env)
+          req = Rack::Request.new(env)
+          req.url
+        end
+
+        def redirect_to(url)
+          [303, {'Content-Type' => 'text/html', 'Location' => url}, []]
         end
 
         def authentication_request
