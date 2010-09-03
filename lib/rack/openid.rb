@@ -139,7 +139,7 @@ module Rack #:nodoc:
 
         oidresp = timeout_protection_from_identity_server {
           consumer = ::OpenID::Consumer.new(session, @store)
-          consumer.complete(req.params, req.url)
+          consumer.complete(Rack::Utils.parse_query(req.query_string), req.url)
         }
 
         env[RESPONSE] = oidresp
