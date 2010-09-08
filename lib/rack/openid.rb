@@ -5,6 +5,7 @@ require 'openid'
 require 'openid/consumer'
 require 'openid/extensions/sreg'
 require 'openid/extensions/ax'
+require 'openid/extensions/oauth'
 
 module Rack #:nodoc:
   # A Rack middleware that provides a more HTTPish API around the
@@ -121,6 +122,7 @@ module Rack #:nodoc:
           oidreq = consumer.begin(identifier)
           add_simple_registration_fields(oidreq, params)
           add_attribute_exchange_fields(oidreq, params)
+          add_oauth_fields(oidreq, params)
           url = open_id_redirect_url(req, oidreq, params["trust_root"], params["return_to"], params["method"])
           return redirect_to(url)
         rescue ::OpenID::OpenIDError, Timeout::Error => e
@@ -242,6 +244,14 @@ module Rack #:nodoc:
         optional.each { |field| axreq.add(::OpenID::AX::AttrInfo.new(field, nil, false)) }
 
         oidreq.add_extension(axreq)
+      end
+
+      def add_oauth_fields(oidreq, fields)
+        if (consumer = fields['oauth[consumer]']) &&
+              (scope = fields['oauth[scope]'])
+          oauthreq = ::OpenID::OAuth::Request.new(consumer, Array(scope).join(' '))
+          oidreq.add_extension(oauthreq)
+        end
       end
 
       def default_store
