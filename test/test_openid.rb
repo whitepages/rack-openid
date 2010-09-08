@@ -159,13 +159,32 @@ class TestOpenID < Test::Unit::TestCase
     assert_equal 'success', @response.body
   end
 
-  def test_with_nested_params_custom_return_to
+  def test_with_get_nested_params_custom_return_to
     url = 'http://example.org/complete?user[remember_me]=true'
     @app = app(:return_to => url)
     process('/', :method => 'GET')
     follow_redirect!
     assert_equal 200, @response.status
     assert_equal 'GET', @response.headers['X-Method']
+    assert_equal '/complete', @response.headers['X-Path']
+    assert_equal 'success', @response.body
+    assert_match(/remember_me/, @response.headers['X-Query-String'])
+  end
+
+  def test_with_post_nested_params_custom_return_to
+    url = 'http://example.org/complete?user[remember_me]=true'
+    @app = app(:return_to => url)
+    process('/', :method => 'POST')
+
+    assert_equal 303, @response.status
+    env = Rack::MockRequest.env_for(@response.headers['Location'])
+    status, headers, body = RotsApp.call(env)
+
+    uri, input = headers['Location'].split('?', 2)
+    process("http://example.org/complete?user[remember_me]=true", :method => 'POST', :input => input)
+
+    assert_equal 200, @response.status
+    assert_equal 'POST', @response.headers['X-Method']
     assert_equal '/complete', @response.headers['X-Path']
     assert_equal 'success', @response.body
     assert_match(/remember_me/, @response.headers['X-Query-String'])
