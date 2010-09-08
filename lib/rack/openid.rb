@@ -139,7 +139,7 @@ module Rack #:nodoc:
 
         oidresp = timeout_protection_from_identity_server {
           consumer = ::OpenID::Consumer.new(session, @store)
-          consumer.complete(Rack::Utils.parse_query(req.query_string), req.url)
+          consumer.complete(flatten_params(req.params), req.url)
         }
 
         env[RESPONSE] = oidresp
@@ -148,6 +148,10 @@ module Rack #:nodoc:
         override_request_method(env, method)
 
         sanitize_query_string(env)
+      end
+
+      def flatten_params(params)
+        Rack::Utils.parse_query(Rack::Utils.build_nested_query(params))
       end
 
       def override_request_method(env, method)
