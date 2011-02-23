@@ -197,6 +197,7 @@ module Rack #:nodoc:
         url = realm_url(req)
         url << req.script_name
         url << req.path_info
+        url << "?#{req.query_string}" if req.query_string.to_s.length > 0
         url
       end
 
