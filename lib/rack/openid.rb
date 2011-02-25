@@ -118,12 +118,14 @@ module Rack #:nodoc:
         consumer = ::OpenID::Consumer.new(session, @store)
         identifier = params['identifier'] || params['identity']
 
+        is_immediate_req = params["immediate"] && !params["immediate"].empty?
+
         begin
           oidreq = consumer.begin(identifier)
           add_simple_registration_fields(oidreq, params)
           add_attribute_exchange_fields(oidreq, params)
           add_oauth_fields(oidreq, params)
-          url = open_id_redirect_url(req, oidreq, params["trust_root"], params["return_to"], params["method"])
+          url = open_id_redirect_url(req, oidreq, params["trust_root"], params["return_to"], params["method"], is_immediate_req)
           return redirect_to(url)
         rescue ::OpenID::OpenIDError, Timeout::Error => e
           env[RESPONSE] = MissingResponse.new
@@ -204,7 +206,7 @@ module Rack #:nodoc:
         [303, {"Content-Type" => "text/html", "Location" => url}, []]
       end
 
-      def open_id_redirect_url(req, oidreq, trust_root = nil, return_to = nil, method = nil)
+      def open_id_redirect_url(req, oidreq, trust_root = nil, return_to = nil, method = nil, immediate = false)
         request_url = request_url(req)
 
         if return_to
@@ -216,7 +218,7 @@ module Rack #:nodoc:
 
         method = method.to_s.downcase
         oidreq.return_to_args['_method'] = method unless method == "get"
-        oidreq.redirect_url(trust_root || realm_url(req), return_to || request_url)
+        oidreq.redirect_url(trust_root || realm_url(req), return_to || request_url, immediate)
       end
 
       def add_simple_registration_fields(oidreq, fields)

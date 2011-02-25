@@ -250,6 +250,21 @@ class TestOpenID < Test::Unit::TestCase
     assert_equal 'success', @response.body
   end
 
+  def test_with_immediate_mode_setup_needed
+    @app = app(:identifier => "#{RotsServerUrl}/john.doe?openid.success=false", :immediate => true)
+    process('/', :method => 'GET')
+
+    location = @response.headers['Location']
+    assert_match(/openid.mode=checkid_immediate/, location)
+
+    follow_redirect!
+    assert_equal 307, @response.status
+    assert_equal 'GET', @response.headers['X-Method']
+    assert_equal '/', @response.headers['X-Path']
+    assert_equal RotsServerUrl, @response.headers['Location']
+    assert_equal 'setup_needed', @response.body
+  end
+
   def test_with_missing_id
     @app = app(:identifier => "#{RotsServerUrl}/john.doe")
     process('/', :method => 'GET')
@@ -297,6 +312,9 @@ class TestOpenID < Test::Unit::TestCase
           }
           if resp.status == :success
             [200, headers, [resp.status.to_s]]
+          elsif resp.status == :setup_needed
+            headers['Location'] = RotsServerUrl #TODO update Rots to properly send user_setup_url. This should come from resp.
+            [307, headers, [resp.status.to_s]]
           else
             [400, headers, [resp.status.to_s]]
           end
