@@ -115,17 +115,16 @@ module Rack #:nodoc:
           raise RuntimeError, "Rack::OpenID requires a session"
         end
 
-        consumer = ::OpenID::Consumer.new(session, @store)
+        consumer   = ::OpenID::Consumer.new(session, @store)
         identifier = params['identifier'] || params['identity']
-
-        is_immediate_req = params["immediate"] && !params["immediate"].empty?
+        immediate  = params['immediate'] == 'true'
 
         begin
           oidreq = consumer.begin(identifier)
           add_simple_registration_fields(oidreq, params)
           add_attribute_exchange_fields(oidreq, params)
           add_oauth_fields(oidreq, params)
-          url = open_id_redirect_url(req, oidreq, params["trust_root"], params["return_to"], params["method"], is_immediate_req)
+          url = open_id_redirect_url(req, oidreq, params["trust_root"], params["return_to"], params["method"], immediate)
           return redirect_to(url)
         rescue ::OpenID::OpenIDError, Timeout::Error => e
           env[RESPONSE] = MissingResponse.new
@@ -206,7 +205,7 @@ module Rack #:nodoc:
         [303, {"Content-Type" => "text/html", "Location" => url}, []]
       end
 
-      def open_id_redirect_url(req, oidreq, trust_root = nil, return_to = nil, method = nil, immediate = false)
+      def open_id_redirect_url(req, oidreq, trust_root, return_to, method, immediate)
         request_url = request_url(req)
 
         if return_to
